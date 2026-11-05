@@ -12,8 +12,12 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install -j$(nproc) gd mysqli pdo pdo_mysql zip \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Enable Apache mod_rewrite
-RUN a2enmod rewrite
+# Fix Apache MPM conflict (Ensure only mpm_prefork is enabled)
+RUN rm -f /etc/apache2/mods-enabled/mpm_event.* \
+          /etc/apache2/mods-enabled/mpm_worker.* \
+          /etc/apache2/mods-enabled/mpm_itk.* \
+    && a2dismod mpm_event mpm_worker mpm_itk || true \
+    && a2enmod mpm_prefork rewrite
 
 # Copy project files into web root
 COPY . /var/www/html/
